@@ -241,7 +241,8 @@ public class PublicWifiService {
                     "                           ST_Distance_Sphere(Point(?, ?), POINT(wifi_info.lat, wifi_info.lnt)) AS distance" +
                     "                     FROM wifi_info" +
                     "                    HAVING distance <= 2000" +
-                    "                     order by distance;";
+                    "                     order by distance" +
+                    "                       limit 20";
             preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setDouble(1, longitude);
             preparedStatement.setDouble(2, latitude);
