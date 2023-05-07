@@ -4,7 +4,7 @@
 <head>
     <title>와이파이 정보 구하기</title>
     <style>
-        h1{
+        h1 {
             margin: 0;
         }
 
@@ -25,6 +25,10 @@
 
         li:last-child::after {
             content: none;
+        }
+
+        button{
+            cursor: pointer;
         }
 
         table {
@@ -75,11 +79,11 @@
 </ul>
 <div>
     <label for="lat">LAT:</label>
-    <input id="lat" name="lat" readonly value="<%=lat%>"/> ,
+    <input id="lat" name="lat"/> ,
     <label for="lnt">LNT</label>
-    <input id="lnt" name="lnt" readonly value="<%=lnt%>"/>
+    <input id="lnt" name="lnt"/>
     <button type="button" onclick="getLocation()">내 위치 가져오기</button>
-    <button type="button" onclick="getWifiList(<%=lat%>, <%=lnt%>)">근처 WIFI 정보 보기</button>
+    <button type="button" onclick="getWifiList()">근처 WIFI 정보 보기</button>
 </div>
 <table>
     <thead>
@@ -103,7 +107,7 @@
         <th>작업일자</th>
     </tr>
     </thead>
-    <tbody>
+    <tbody id="tbody">
     <tr>
         <td colspan="17" class="td-empty">
             위치 정보를 입력한 후에 조회해 주세요.
@@ -113,12 +117,27 @@
 </table>
 <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
 <script>
+    (function () {
+        const url = window.location.search;
+        const qs = url.substring(url.indexOf("?") + 1).split("&");
+        let result = {};
+        qs.forEach(v => {
+            const key = v.split("=")[0];
+            const value = v.split("=")[1];
+            result[key] = value;
+        })
+        let latInput = document.getElementById("lat");
+        let lntInput = document.getElementById("lnt");
+        lntInput.value = result?.lnt || "0.0";
+        latInput.value = result?.lat || "0.0";
+
+    }())
+
     function getLocation() {
         navigator.geolocation.getCurrentPosition(success, error)
     }
 
     function success({coords}) {
-        console.log({coords});
         const url = "?lat=" + coords.latitude + "&lnt=" + coords.longitude;
         window.location.href = url;
     }
@@ -128,7 +147,9 @@
         alert('내 위치 정보를 가져올 수 없습니다.');
     }
 
-    function getWifiList(lat, lnt) {
+    function getWifiList() {
+        let lat = document.getElementById("lat").value;
+        let lnt = document.getElementById("lnt").value;
         $.ajax({
             type: "GET",
             url: "/wifi",
@@ -138,8 +159,39 @@
             },
             success: (response) => {
                 if (response) {
-                    $("tbody").html(response);
+                    let tbody = document.getElementById("tbody");
+                    tbody.innerHTML = "";
+
+                    if(response.length > 0) {
+
+                        for (let data of response) {
+                            let tr = document.createElement("tr");
+                            tr.innerHTML = "<td>" + data.distance + "</td>" +
+                                "<td>" + data.mgrNo + "</td>" +
+                                "<td>" + data.wrdofc + "</td>" +
+                                "<td>" + data.mainNm + "</td>" +
+                                "<td>" + data.address1 + "</td>" +
+                                "<td>" + data.address2 + "</td>" +
+                                "<td>" + data.floor + "</td>" +
+                                "<td>" + data.type + "</td>" +
+                                "<td>" + data.organization + "</td>" +
+                                "<td>" + data.serviceType + "</td>" +
+                                "<td>" + data.networkType + "</td>" +
+                                "<td>" + data.year + "</td>" +
+                                "<td>" + data.indoorOutdoor + "</td>" +
+                                "<td>" + data.accessEnvironment + "</td>" +
+                                "<td>" + data.lat + "</td>" +
+                                "<td>" + data.lnt + "</td>" +
+                                "<td>" + data.dttm + "</td>";
+                            tbody.appendChild(tr);
+                        }
+                    } else {
+                        let tr = document.createElement("tr");
+                        tr.innerHTML = "<td class='td-empty' colspan='17'>해당하는 데이터가 없습니다.</td>"
+                        tbody.appendChild(tr);
+                    }
                     handleHistoryInsert(lat, lnt);
+
                 } else {
                     alert("데이터 조회 실패");
                 }

@@ -66,6 +66,10 @@
             cursor: pointer;
         }
 
+        button{
+            cursor: pointer;
+        }
+
         .td-empty {
             padding: 20px;
             border: 1px solid lightgray;
