@@ -41,7 +41,7 @@ public class PublicWifiService {
             String res = response.body().string();
             JsonObject jsonObject = gson.fromJson(res, JsonObject.class);
             listTotalCount = jsonObject.getAsJsonObject("TbPublicWifiInfo").getAsJsonPrimitive("list_total_count").getAsInt();
-            System.out.println(listTotalCount);
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -109,9 +109,8 @@ public class PublicWifiService {
         ResultSet rs = null;
         for (int i = 0; i < totalCnt / 1000; i++) {
             int sIndex = i * 1000 + 1;
-            int eIndex = (i + 1) * 1000 < totalCnt ? (i + 1) * 1000  : totalCnt;
-            System.out.println(sIndex);
-            System.out.println(eIndex);
+            int eIndex = (i + 1) * 1000 < totalCnt ? (i + 1) * 1000 : totalCnt;
+
 
             String urlBuilder = "http://openapi.seoul.go.kr:8088" + "/" + URLEncoder.encode("484b4a65636272693831796d6c4d4e", StandardCharsets.UTF_8) +
                     "/" + URLEncoder.encode("json", StandardCharsets.UTF_8) +
@@ -135,8 +134,8 @@ public class PublicWifiService {
                 connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
 
 
-                String sql = "insert into wifi_info (mgr_no, wrdofc, main_nm, address1, address2, floor, type, organization, service_type, network_type, year, indoor_outdoor, access_environment, lat, lnt, dttm, distance)" +
-                        "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE wrdofc = VALUES(wrdofc)";
+                String sql = "insert into wifi_info (mgr_no, wrdofc, main_nm, address1, address2, floor, type, organization, service_type, network_type, year, indoor_outdoor, access_environment, lat, lnt, dttm)" +
+                        "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE wrdofc = VALUES(wrdofc)";
 
                 preparedStatement = connection.prepareStatement(sql);
                 int affectedRows = 0;
@@ -156,10 +155,9 @@ public class PublicWifiService {
                     preparedStatement.setString(11, row.get("X_SWIFI_CNSTC_YEAR").getAsString());
                     preparedStatement.setString(12, row.get("X_SWIFI_INOUT_DOOR").getAsString());
                     preparedStatement.setString(13, row.get("X_SWIFI_REMARS3").getAsString());
-                    preparedStatement.setDouble(14, row.get("LAT").getAsDouble());
-                    preparedStatement.setDouble(15, row.get("LNT").getAsDouble());
+                    preparedStatement.setDouble(14, row.get("LAT").getAsDouble() > row.get("LNT").getAsDouble() ? row.get("LAT").getAsDouble() : row.get("LNT").getAsDouble());
+                    preparedStatement.setDouble(15, row.get("LAT").getAsDouble() < row.get("LNT").getAsDouble() ? row.get("LAT").getAsDouble() : row.get("LNT").getAsDouble());
                     preparedStatement.setString(16, row.get("WORK_DTTM").getAsString());
-                    preparedStatement.setDouble(17, 0.0);
                     affectedRows += preparedStatement.executeUpdate();
 
                 }
@@ -202,7 +200,7 @@ public class PublicWifiService {
         return totalCnt;
     }
 
-    public List<PublicWifiInfo> getWifiList (String latitude, String longitude) {
+    public List<PublicWifiInfo> getWifiList(Double latitude, Double longitude) {
         List<PublicWifiInfo> wifiList = new ArrayList<>();
 
         try {
@@ -216,37 +214,37 @@ public class PublicWifiService {
         PreparedStatement preparedStatement = null;
         ResultSet rs = null;
 
-        try{
+        try {
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-            String sql = "select distance, mgr_no, wrdofc, main_nm, address1, address2, floor, type, organization, service_type, network_type, year, indoor_outdoor, access_environment, lat, lnt, dttm from wifi_info limit 20;" ;
 
-//            String sql = "SELECT ST_Distance_Sphere(Point(?, ?), POINT(lnt, lat)) AS distance," +
-//                    "       mgr_no," +
-//                    "       wrdofc," +
-//                    "       main_nm," +
-//                    "       address1," +
-//                    "       mgr_no," +
-//                    "       wrdofc," +
-//                    "       main_nm," +
-//                    "       address1," +
-//                    "       address2," +
-//                    "       floor," +
-//                    "       type," +
-//                    "       organization," +
-//                    "       service_type," +
-//                    "       network_type," +
-//                    "       year," +
-//                    "       indoor_outdoor," +
-//                    "       access_environment," +
-//                    "       lat," +
-//                    "       lnt," +
-//                    "       dttm" +
-//                    " FROM wifi_info " +
-//                    " HAVING distance <= 1000 " +
-//                    " order by distance ;";
+
+            String sql = "SELECT                           mgr_no," +
+                    "                           wrdofc," +
+                    "                    main_nm," +
+                    "                       address1," +
+                    "                          mgr_no," +
+                    "                          wrdofc," +
+                    "                           main_nm," +
+                    "                           address1," +
+                    "                           address2," +
+                    "                           floor," +
+                    "                           type," +
+                    "                           organization," +
+                    "                           service_type," +
+                    "                           network_type," +
+                    "                           year," +
+                    "                           indoor_outdoor," +
+                    "                           access_environment," +
+                    "                           lnt," +
+                    "                           lat," +
+                    "                           dttm," +
+                    "                           ST_Distance_Sphere(Point(?, ?), POINT(wifi_info.lat, wifi_info.lnt)) AS distance" +
+                    "                     FROM wifi_info" +
+                    "                    HAVING distance <= 2000" +
+                    "                     order by distance;";
             preparedStatement = connection.prepareStatement(sql);
-//            preparedStatement.setString(2, longitude);
-//            preparedStatement.setString(1, latitude);
+            preparedStatement.setDouble(1, longitude);
+            preparedStatement.setDouble(2, latitude);
             rs = preparedStatement.executeQuery();
 
             while (rs.next()) {
@@ -263,12 +261,13 @@ public class PublicWifiService {
                 String year = rs.getString("year");
                 String indoorOutdoor = rs.getString("indoor_outdoor");
                 String accessEnvironment = rs.getString("access_environment");
-                Double lat = rs.getDouble("lat");
                 Double lnt = rs.getDouble("lnt");
+                Double lat = rs.getDouble("lat");
                 String dttm = rs.getString("dttm");
-                Double distance = rs.getDouble("distance");
+                Double distance = Double.parseDouble(String.format("%.3f", rs.getDouble("distance") / 1000.0));
 
                 PublicWifiInfo wifiInfo = new PublicWifiInfo();
+
                 wifiInfo.setMgrNo(mgrNo);
                 wifiInfo.setWrdofc(wrdofc);
                 wifiInfo.setMainNm(mainNm);
@@ -282,8 +281,8 @@ public class PublicWifiService {
                 wifiInfo.setYear(year);
                 wifiInfo.setIndoorOutdoor(indoorOutdoor);
                 wifiInfo.setAccessEnvironment(accessEnvironment);
-                wifiInfo.setLat(lat);
                 wifiInfo.setLnt(lnt);
+                wifiInfo.setLat(lat);
                 wifiInfo.setDttm(dttm);
                 wifiInfo.setDistance(distance);
 
@@ -293,7 +292,6 @@ public class PublicWifiService {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
 
         return wifiList;
     }
