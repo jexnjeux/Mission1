@@ -14,14 +14,14 @@ import java.io.IOException;
             HistoryService historyService = new HistoryService();
             response.setCharacterEncoding("UTF-8");
             String id = request.getParameter("id");
-            System.out.println(id);
+
             if (id == null || id.isEmpty()) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             }
-            historyService.deleteHistory(id);
             response.setContentType("text/html");
             response.getWriter().println("ok");
             response.setStatus(HttpServletResponse.SC_OK);
+            historyService.deleteHistory(id);
         }
 
     @Override

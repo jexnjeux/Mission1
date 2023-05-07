@@ -9,11 +9,12 @@ public class HistoryService {
     static final String DB_URL = "jdbc:mariadb://localhost:3306/mission1db";
     static final String DB_USER = "mission1user";
     static final String DB_PASSWORD = "zerobase";
+    static final String DB_DRIVER_CLASS = "org.mariadb.jdbc.Driver";
 
     public void insertHistory(String latitude, String longitude) throws SQLException {
 
         try {
-            Class.forName("org.mariadb.jdbc.Driver");
+            Class.forName(DB_DRIVER_CLASS);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -40,37 +41,37 @@ public class HistoryService {
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            try {
+                if (rs != null && !rs.isClosed()) {
+                    rs.close();
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                if (preparedStatement != null && !preparedStatement.isClosed()) {
+                    preparedStatement.close();
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                if (connection != null && !connection.isClosed()) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-
-        try {
-            if (rs != null && !rs.isClosed()) {
-                rs.close();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            if (preparedStatement != null && !preparedStatement.isClosed()) {
-                preparedStatement.close();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public List<HistoryInfo> getHistoryList() {
         List<HistoryInfo> historyList = new ArrayList<>();
 
         try {
-            Class.forName("org.mariadb.jdbc.Driver");
+            Class.forName(DB_DRIVER_CLASS);
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -87,7 +88,7 @@ public class HistoryService {
 
             rs = preparedStatement.executeQuery();
 
-            while(rs.next()) {
+            while (rs.next()) {
                 int id = rs.getInt("id");
                 double lat = rs.getDouble("lat");
                 double lnt = rs.getDouble("lnt");
@@ -103,7 +104,7 @@ public class HistoryService {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             try {
                 if (rs != null && !rs.isClosed()) {
                     rs.close();
@@ -132,7 +133,7 @@ public class HistoryService {
 
     public void deleteHistory(String id) {
         try {
-            Class.forName("org.mariadb.jdbc.Driver");
+            Class.forName(DB_DRIVER_CLASS);
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();

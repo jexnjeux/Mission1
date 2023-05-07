@@ -20,27 +20,29 @@ public class PublicWifiService {
     static final String DB_URL = "jdbc:mariadb://localhost:3306/mission1db";
     static final String DB_USER = "mission1user";
     static final String DB_PASSWORD = "zerobase";
-    String service = "TbPublicWifiInfo";
-    com.google.gson.Gson gson = new Gson();
+    static final String DB_DRIVER_CLASS = "org.mariadb.jdbc.Driver";
 
-    public int getTotalCnt() throws UnsupportedEncodingException, MalformedURLException {
+    String service = "TbPublicWifiInfo";
+
+    public int getTotalCnt() throws MalformedURLException {
         int listTotalCount = 0;
 
         StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
-        urlBuilder.append("/" + URLEncoder.encode("484b4a65636272693831796d6c4d4e", "UTF-8"));
-        urlBuilder.append("/" + URLEncoder.encode("json", "UTF-8"));
-        urlBuilder.append("/" + URLEncoder.encode("TbPublicWifiInfo", "UTF-8"));
-        urlBuilder.append("/" + URLEncoder.encode("1", "UTF-8"));
-        urlBuilder.append("/" + URLEncoder.encode("1", "UTF-8"));
+        urlBuilder.append("/").append(URLEncoder.encode("484b4a65636272693831796d6c4d4e", StandardCharsets.UTF_8));
+        urlBuilder.append("/").append(URLEncoder.encode("json", StandardCharsets.UTF_8));
+        urlBuilder.append("/").append(URLEncoder.encode(service, StandardCharsets.UTF_8));
+        urlBuilder.append("/").append(URLEncoder.encode("1", StandardCharsets.UTF_8));
+        urlBuilder.append("/").append(URLEncoder.encode("1", StandardCharsets.UTF_8));
 
         OkHttpClient client = new OkHttpClient();
+        com.google.gson.Gson gson = new Gson();
         URL url = new URL(urlBuilder.toString());
         Request request = new Request.Builder().url(url).build();
 
         try (Response response = client.newCall(request).execute()) {
             String res = response.body().string();
             JsonObject jsonObject = gson.fromJson(res, JsonObject.class);
-            listTotalCount = jsonObject.getAsJsonObject("TbPublicWifiInfo").getAsJsonPrimitive("list_total_count").getAsInt();
+            listTotalCount = jsonObject.getAsJsonObject(service).getAsJsonPrimitive("list_total_count").getAsInt();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -50,7 +52,7 @@ public class PublicWifiService {
 
     public void deleteWifiInfo() {
         try {
-            Class.forName("org.mariadb.jdbc.Driver");
+            Class.forName(DB_DRIVER_CLASS);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -74,8 +76,8 @@ public class PublicWifiService {
             throw new RuntimeException(e);
         } finally {
             try {
-                if (rs != null && !rs.isClosed()) {
-                    rs.close();
+                if (rs != null) {
+                    rs.isClosed();
                 }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -109,18 +111,18 @@ public class PublicWifiService {
         ResultSet rs = null;
         for (int i = 0; i < totalCnt / 1000; i++) {
             int sIndex = i * 1000 + 1;
-            int eIndex = (i + 1) * 1000 < totalCnt ? (i + 1) * 1000 : totalCnt;
+            int eIndex = Math.min((i + 1) * 1000, totalCnt);
 
-
-            String urlBuilder = "http://openapi.seoul.go.kr:8088" + "/" + URLEncoder.encode("484b4a65636272693831796d6c4d4e", StandardCharsets.UTF_8) +
-                    "/" + URLEncoder.encode("json", StandardCharsets.UTF_8) +
-                    "/" + URLEncoder.encode(service, StandardCharsets.UTF_8) +
-                    "/" + URLEncoder.encode(Integer.toString(sIndex), StandardCharsets.UTF_8) +
-                    "/" + URLEncoder.encode(Integer.toString(eIndex), StandardCharsets.UTF_8);
+            StringBuilder urlBuilder = new StringBuilder("http://openapi.seoul.go.kr:8088");
+            urlBuilder.append("/").append(URLEncoder.encode("484b4a65636272693831796d6c4d4e", StandardCharsets.UTF_8));
+            urlBuilder.append("/").append(URLEncoder.encode("json", StandardCharsets.UTF_8));
+            urlBuilder.append("/").append(URLEncoder.encode(service, StandardCharsets.UTF_8));
+            urlBuilder.append("/").append(URLEncoder.encode(Integer.toString(sIndex), StandardCharsets.UTF_8));
+            urlBuilder.append("/").append(URLEncoder.encode(Integer.toString(eIndex), StandardCharsets.UTF_8));
 
             OkHttpClient client = new OkHttpClient();
             com.google.gson.Gson gson = new Gson();
-            URL url = new URL(urlBuilder);
+            URL url = new URL(urlBuilder.toString());
             Request request = new Request.Builder().url(url).build();
 
             try (Response response = client.newCall(request).execute()) {
@@ -128,7 +130,7 @@ public class PublicWifiService {
                 JsonObject jsonObject = gson.fromJson(res, JsonObject.class);
                 JsonArray rows = jsonObject.getAsJsonObject("TbPublicWifiInfo").getAsJsonArray("row");
 
-                Class.forName("org.mariadb.jdbc.Driver");
+                Class.forName(DB_DRIVER_CLASS);
 
 
                 connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
@@ -155,8 +157,8 @@ public class PublicWifiService {
                     preparedStatement.setString(11, row.get("X_SWIFI_CNSTC_YEAR").getAsString());
                     preparedStatement.setString(12, row.get("X_SWIFI_INOUT_DOOR").getAsString());
                     preparedStatement.setString(13, row.get("X_SWIFI_REMARS3").getAsString());
-                    preparedStatement.setDouble(14, row.get("LAT").getAsDouble() > row.get("LNT").getAsDouble() ? row.get("LAT").getAsDouble() : row.get("LNT").getAsDouble());
-                    preparedStatement.setDouble(15, row.get("LAT").getAsDouble() < row.get("LNT").getAsDouble() ? row.get("LAT").getAsDouble() : row.get("LNT").getAsDouble());
+                    preparedStatement.setDouble(14, Math.max(row.get("LAT").getAsDouble(), row.get("LNT").getAsDouble()));
+                    preparedStatement.setDouble(15, Math.min(row.get("LAT").getAsDouble(), row.get("LNT").getAsDouble()));
                     preparedStatement.setString(16, row.get("WORK_DTTM").getAsString());
                     affectedRows += preparedStatement.executeUpdate();
 
