@@ -33,8 +33,12 @@
             border-collapse: collapse;
         }
 
-        table, th, td {
-            border: 1px solid;
+        table, td {
+            border: 1px solid lightgray;
+        }
+
+        tr:nth-child(even) {
+            background-color: #ededed;
         }
 
         th {
