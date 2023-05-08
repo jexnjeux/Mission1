@@ -157,8 +157,8 @@ public class PublicWifiService {
                     preparedStatement.setString(11, row.get("X_SWIFI_CNSTC_YEAR").getAsString());
                     preparedStatement.setString(12, row.get("X_SWIFI_INOUT_DOOR").getAsString());
                     preparedStatement.setString(13, row.get("X_SWIFI_REMARS3").getAsString());
-                    preparedStatement.setDouble(14, Math.max(row.get("LAT").getAsDouble(), row.get("LNT").getAsDouble()));
-                    preparedStatement.setDouble(15, Math.min(row.get("LAT").getAsDouble(), row.get("LNT").getAsDouble()));
+                    preparedStatement.setDouble(14, Math.min(row.get("LAT").getAsDouble(), row.get("LNT").getAsDouble()));
+                    preparedStatement.setDouble(15, Math.max(row.get("LAT").getAsDouble(), row.get("LNT").getAsDouble()));
                     preparedStatement.setString(16, row.get("WORK_DTTM").getAsString());
                     affectedRows += preparedStatement.executeUpdate();
 
@@ -240,7 +240,7 @@ public class PublicWifiService {
                     "                           lnt," +
                     "                           lat," +
                     "                           dttm," +
-                    "                           ST_Distance_Sphere(Point(?, ?), POINT(wifi_info.lat, wifi_info.lnt)) AS distance" +
+                    "                           ST_Distance_Sphere(Point(?, ?), POINT(wifi_info.lnt, wifi_info.lat)) AS distance" +
                     "                     FROM wifi_info" +
                     "                    HAVING distance <= 2000" +
                     "                     order by distance" +
