@@ -52,6 +52,10 @@
             color: white;
         }
 
+        th:not(last-child) {
+            border-right: 1px solid #fff;
+        }
+
         td {
             padding: 8px;
             text-align: center;

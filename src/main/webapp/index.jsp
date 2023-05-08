@@ -50,6 +50,11 @@
             background-color: green;
             font-size: 13px;
             color: white;
+
+        }
+
+        th:not(last-child) {
+            border-right: 1px solid #fff;
         }
 
         td {
